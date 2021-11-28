@@ -50,7 +50,8 @@ namespace PhilLibX.IO
         /// <param name="buffer"></param>
         public void WriteBytes(long address, byte[] buffer)
         {
-            if(!NativeMethods.WriteProcessMemory((int)Handle, address, buffer, buffer.Length, out int bytesRead))
+            int bytesRead = 0;
+            if (!NativeMethods.WriteProcessMemory((int)Handle, address, buffer, buffer.Length, out bytesRead))
             {
                 throw new ArgumentException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
             }

@@ -47,6 +47,10 @@
     <Reference Include="Costura, Version=3.1.6.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.3.1.6\lib\net46\Costura.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -63,6 +67,7 @@
     <Compile Include="FileFormats\WavefrontOBJ.cs" />
     <Compile Include="GameStructures\Shared.cs" />
     <Compile Include="Games\BlackOps2.cs" />
+    <Compile Include="Games\BlackOps3.cs" />
     <Compile Include="Games\Ghosts.cs" />
     <Compile Include="Games\WorldWarII.cs" />
     <Compile Include="Games\ModernWarfare3.cs" />

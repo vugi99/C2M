@@ -348,8 +348,12 @@ namespace Husky
                     {
                         // Create new Material
                         var material = ReadMaterial(reader, surface.MaterialPointer);
+
                         // Add to images
                         imageNames.Add(material.DiffuseMap);
+                        imageNames.Add(material.NormalMap);
+                        imageNames.Add(material.SpecularMap);
+
                         // Add it
                         obj.AddMaterial(material);
                         // Add points
@@ -493,10 +497,14 @@ namespace Husky
             for (byte i = 0; i < material.ImageCount; i++)
             {
                 // Read Material Image
-                var materialImage = reader.ReadStruct<MaterialImage32B>(material.ImageTablePointer + i * Marshal.SizeOf<MaterialImage32B>());
+                var materialImage = reader.ReadStruct<MaterialImage32A>(material.ImageTablePointer + i * Marshal.SizeOf<MaterialImage32A>());
                 // Check for color map for now
                 if (materialImage.SemanticHash == 0xA0AB1041)
-                    objMaterial.DiffuseMap = reader.ReadNullTerminatedString(reader.ReadInt32(materialImage.ImagePointer + 0x20));
+                    objMaterial.DiffuseMap = reader.ReadNullTerminatedString(reader.ReadInt32(materialImage.ImagePointer + 44));
+                else if (materialImage.SemanticHash == 0x59D30D0F)
+                    objMaterial.NormalMap = reader.ReadNullTerminatedString(reader.ReadInt32(materialImage.ImagePointer + 44));
+                else if (materialImage.SemanticHash == 0x34ECCCB3)
+                    objMaterial.SpecularMap = reader.ReadNullTerminatedString(reader.ReadInt32(materialImage.ImagePointer + 44));
             }
             // Done
             return objMaterial;

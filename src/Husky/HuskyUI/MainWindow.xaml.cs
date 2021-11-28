@@ -43,7 +43,7 @@ namespace HuskyUI
             // Set title
             Title = String.Format("C2M - Call of Duty BSP Extractor");
             // Initial Print
-            PrintLine("Load a map, then click the paper plane to export loaded BSP data.\n\nSupported CoD's:\n\n * Modern Warfare\n * Modern Warfare 2\n * Modern Warfare 3\n * Modern Warfare Remastered\n * World at War\n * Black Ops I\n * Black Ops II\n * Ghosts\n * Advanced Warfare\n * Infinite Warfare\n * World War II");
+            PrintLine("Load a map, then click the paper plane to export loaded BSP data.\n\nSupported CoD's:\n\n * Modern Warfare\n * Modern Warfare 2\n * Modern Warfare 3\n * Modern Warfare Remastered\n * World at War\n * Black Ops I\n * Black Ops II\n * Black Ops III\n * Ghosts\n * Advanced Warfare\n * Infinite Warfare\n * World War II");
             PrintLine("");
         }
 

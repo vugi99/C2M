@@ -118,14 +118,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="icon.ico" />
+    <Resource Include="icon.png" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Husky\Husky.csproj">
       <Project>{bbeb0978-d656-4432-80e9-cf2083f53349}</Project>
       <Name>Husky</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="icon.ico" />
-    <Resource Include="icon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.3.2.12\build\Fody.targets" Condition="Exists('..\packages\Fody.3.2.12\build\Fody.targets')" />

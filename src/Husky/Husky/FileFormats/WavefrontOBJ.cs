@@ -301,13 +301,14 @@ namespace Husky
         /// <param name="lineSplit">Line split containing x,y,z as indexes 1,2,3</param>
         private void LoadVertexPoint(string[] lineSplit)
         {
-            if (!Single.TryParse(lineSplit[1], out float x))
+            float x, y, z = 0.0f;
+            if (!Single.TryParse(lineSplit[1], out x))
                 throw new OBJReadException(String.Format("Failed to parse an X Value from Vertex::{0} Line::{1}", Vertices.Count, ActiveLine));
 
-            if (!Single.TryParse(lineSplit[2], out float y))
+            if (!Single.TryParse(lineSplit[2], out y))
                 throw new OBJReadException(String.Format("Failed to parse a Y Value from Vertex::{0} Line::{1}", Vertices.Count, ActiveLine));
 
-            if (!Single.TryParse(lineSplit[3], out float z))
+            if (!Single.TryParse(lineSplit[3], out z))
                 throw new OBJReadException(String.Format("Failed to parse a Z Value from Vertex::{0} Line::{1}", Vertices.Count, ActiveLine));
 
             Vertices.Add(new Vector3(x, y, z));
@@ -319,10 +320,11 @@ namespace Husky
         /// <param name="lineSplit">Line split containing u,v as indexes 1,2</param>
         private void LoadUVPoint(string[] lineSplit)
         {
-            if (!Single.TryParse(lineSplit[1], out float u))
+            float u, v = 0.0f;
+            if (!Single.TryParse(lineSplit[1], out u))
                 throw new OBJReadException(String.Format("Failed to parse a U Value from UV::{0} Line::{1}", UVs.Count, ActiveLine));
 
-            if (!Single.TryParse(lineSplit[2], out float v))
+            if (!Single.TryParse(lineSplit[2], out v))
                 throw new OBJReadException(String.Format("Failed to parse a V Value from UV::{0} Line::{1}", UVs.Count, ActiveLine));
 
             UVs.Add(new Vector2(u, v));
@@ -334,13 +336,14 @@ namespace Husky
         /// <param name="lineSplit">Line split containing x,y,z as indexes 1,2,3</param>
         private void LoadNormal(string[] lineSplit)
         {
-            if (!Single.TryParse(lineSplit[1], out float x))
+            float x, y, z = 0.0f;
+            if (!Single.TryParse(lineSplit[1], out x))
                 throw new OBJReadException(String.Format("Failed to parse an X Value from Normal::{0} Line::{1}", Normals.Count, ActiveLine));
 
-            if (!Single.TryParse(lineSplit[2], out float y))
+            if (!Single.TryParse(lineSplit[2], out y))
                 throw new OBJReadException(String.Format("Failed to parse a Y Value from Normal::{0} Line::{1}", Normals.Count, ActiveLine));
 
-            if (!Single.TryParse(lineSplit[3], out float z))
+            if (!Single.TryParse(lineSplit[3], out z))
                 throw new OBJReadException(String.Format("Failed to parse a Z Value from Normal::{0} Line::{1}", Normals.Count, ActiveLine));
 
             Normals.Add(new Vector3(x, y, z));
@@ -364,13 +367,14 @@ namespace Husky
                 if (faceSplit.Length != 3)
                     throw new OBJReadException(String.Format("No UV and/or Normal index on Face::{0} Vertex::{1} Line::{2}", Faces.Count, i, ActiveLine));
 
-                if (!Int32.TryParse(faceSplit[0], out int vertexIndex))
+                int vertexIndex, uvIndex, normalIndex = 0;
+                if (!Int32.TryParse(faceSplit[0], out vertexIndex))
                     throw new OBJReadException(String.Format("Failed to parse Vertex Index on Face::{0} Vertex::{1} Line::{2}", Faces.Count, i, ActiveLine));
 
-                if (!Int32.TryParse(faceSplit[1], out int uvIndex))
+                if (!Int32.TryParse(faceSplit[1], out uvIndex))
                     throw new OBJReadException(String.Format("Failed to parse UV Index on Face::{0} Vertex::{1} Line::{2}", Faces.Count, i, ActiveLine));
 
-                if (!Int32.TryParse(faceSplit[2], out int normalIndex))
+                if (!Int32.TryParse(faceSplit[2], out normalIndex))
                     throw new OBJReadException(String.Format("Failed to parse Normal Index on Face::{0} Vertex::{1} Line::{2}", Faces.Count, i, ActiveLine));
 
                 face.Vertices[i - 1] = new Face.Vertex

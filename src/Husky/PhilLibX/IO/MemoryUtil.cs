@@ -62,7 +62,8 @@ namespace PhilLibX.IO
             // Resulting buffer
             byte[] buffer = new byte[numBytes];
             // Request ReadProcessMemory
-            NativeMethods.ReadProcessMemory((int)processHandle, address, buffer, buffer.Length, out int bytesRead);
+            int bytesRead = 0;
+            NativeMethods.ReadProcessMemory((int)processHandle, address, buffer, buffer.Length, out bytesRead);
             // Return result
             return buffer;
         }
