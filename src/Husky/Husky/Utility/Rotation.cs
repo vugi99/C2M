@@ -92,6 +92,7 @@ namespace Husky
             /// <returns>Resulting Euler Vector</returns>
             public Vector3 ToEuler()
             {
+                
                 // I need to switch this back from Mat -> Quat -> Euler to straight Mat -> Euler
                 // I thought none the calculations were working, NO, the bastards
                 // in the .MAP files store them as YXZ or some crap like that

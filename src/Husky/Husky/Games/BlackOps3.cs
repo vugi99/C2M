@@ -402,13 +402,13 @@ namespace Husky
             if (reader.ReadNullTerminatedString(reader.ReadInt64(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + 0x80))) == "void")
             {
                 // Load BSP Pools (they only have a size of 1 so we don't care about reading more than 1)
-                var gfxMapAsset = reader.ReadStruct<GfxMap>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + 2 * 0x100));
-                var mapEntsAsset = reader.ReadStruct<MapEnts64>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + 2 * 0xFE) + 2);
+                var gfxMapAsset = reader.ReadStruct<GfxMap>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + 16 * 0x20));
+                var mapEntsAsset = reader.ReadStruct<MapEnts64>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + 0x1E0));
+
 
                 // Name
                 string gfxMapName = reader.ReadNullTerminatedString(gfxMapAsset.NamePointer);
                 string mapName = reader.ReadNullTerminatedString(gfxMapAsset.MapNamePointer);
-                // string mapEnt = reader.ReadNullTerminatedString(mapEntsAsset.MapData).Replace("672 \"", "\"model\" \"").Replace("65 \"", "\"angles\" \"").Replace("742 \"", "\"origin\" \"");
                 string mapEnt = reader.ReadNullTerminatedString(mapEntsAsset.MapData);
 
                 // Verify a BSP is actually loaded (if in base menu, etc, no map is loaded)
@@ -430,6 +430,24 @@ namespace Husky
                     // Build output Folder
                     string outputName = Path.Combine("exported_maps", "black_ops_3", gameType, mapName, mapName);
                     Directory.CreateDirectory(Path.GetDirectoryName(outputName));
+
+                    // Code to find mapEnt address offset
+                    /*string outputOffsets = Path.Combine(Path.GetDirectoryName(outputName), "TestOffsets", "Test_Offset_");
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputOffsets));
+                    for (int test_offset = 0; test_offset < 513; test_offset++)
+                    {
+                        for (int test_offset2 = 0; test_offset2 < 65; test_offset2++)
+                        {
+                            var testmapEntsAsset = reader.ReadStruct<MapEnts64>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + test_offset * 0x1) + test_offset2);
+                            string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
+                            if (!String.IsNullOrWhiteSpace(testmapEnt))
+                            {
+                                printCallback?.Invoke(String.Format("PoolAddressOffset MapEnts {0}, {1}", test_offset, test_offset2));
+                                
+                                File.WriteAllText(outputOffsets + String.Format("GAME_OFFSET_{0}_OFFSET2_{1}.txt", test_offset, test_offset2), testmapEnt);
+                            }
+                        }
+                    }*/
 
                     // Stop watch
                     var stopWatch = Stopwatch.StartNew();
@@ -545,6 +563,7 @@ namespace Husky
 
                     // Dump it
                     File.WriteAllText(outputName + "_search_string.txt", searchString);
+                    File.WriteAllText(outputName + "_mapEnts.txt", mapEnt);
                     File.WriteAllText(outputName + "_xmodelList.txt", String.Join(",", xmodelList.ToArray()));
 
                     // Read entities and dump to map
