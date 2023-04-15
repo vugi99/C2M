@@ -431,22 +431,31 @@ namespace Husky
                     string outputName = Path.Combine("exported_maps", "black_ops_3", gameType, mapName, mapName);
                     Directory.CreateDirectory(Path.GetDirectoryName(outputName));
 
-                    // Code to find mapEnt address offset
                     /*string outputOffsets = Path.Combine(Path.GetDirectoryName(outputName), "TestOffsets", "Test_Offset_");
                     Directory.CreateDirectory(Path.GetDirectoryName(outputOffsets));
-                    for (int test_offset = 0; test_offset < 513; test_offset++)
+
+                    long test_offset = 0;
+                    while (true)
                     {
-                        for (int test_offset2 = 0; test_offset2 < 65; test_offset2++)
+                        var testgfxMapAsset = reader.ReadStruct<GfxMap>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + test_offset * 0x1));
+                        string testgfxMapName = reader.ReadNullTerminatedString(gfxMapAsset.NamePointer);
+                        var testmapEntsAsset = reader.ReadStruct<MapEnts64>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + test_offset * 0x1));
+                        string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
+                        if (!String.IsNullOrWhiteSpace(testmapEnt) && testmapEnt.Length > 100000)
                         {
-                            var testmapEntsAsset = reader.ReadStruct<MapEnts64>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + test_offset * 0x1) + test_offset2);
-                            string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
-                            if (!String.IsNullOrWhiteSpace(testmapEnt))
+                            string firstLetter = testmapEnt.Substring(0, 1);
+                            if (firstLetter == "{")
                             {
-                                printCallback?.Invoke(String.Format("PoolAddressOffset MapEnts {0}, {1}", test_offset, test_offset2));
-                                
-                                File.WriteAllText(outputOffsets + String.Format("GAME_OFFSET_{0}_OFFSET2_{1}.txt", test_offset, test_offset2), testmapEnt);
+                                printCallback?.Invoke(String.Format("PoolAddressOffset MapEnts {0}", test_offset));
+
+                                File.WriteAllText(outputOffsets + String.Format("GAME_OFFSET_{0}.txt", test_offset), testmapEnt);
                             }
                         }
+                        if (!String.IsNullOrWhiteSpace(testgfxMapName) && testgfxMapName != "2d_replace" && testgfxMapAsset.GfxVertexCount > 0 && testgfxMapAsset.GfxIndicesCount > 0 && testgfxMapAsset.SurfaceCount > 0 && testgfxMapAsset.GfxStaticModelsCount > 0)
+                        {
+                            printCallback?.Invoke(String.Format("gfxMap {0}, {1}", testgfxMapName, test_offset));
+                        }
+                        test_offset = test_offset + 1;
                     }*/
 
                     // Stop watch
@@ -578,7 +587,7 @@ namespace Husky
             }
             else
             {
-                printCallback?.Invoke("Call of Duty: Advanced Warfare is supported, but this EXE is not.");
+                printCallback?.Invoke("Call of Duty: Black Ops 3 is supported, but this EXE is not.");
             }
         }
 

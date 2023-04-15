@@ -272,10 +272,12 @@ namespace Husky
             {
                 // Load BSP Pools (they only have a size of 1 so we have no free header)
                 var gfxMapAsset = reader.ReadStruct<GfxMap>(reader.ReadInt32(assetPoolsAddress + 0x44));
+                var mapEntsAsset = reader.ReadStruct<MapEntsMW2>(reader.ReadInt32(assetPoolsAddress + 0x40));
 
                 // Name
                 string gfxMapName = reader.ReadNullTerminatedString(gfxMapAsset.NamePointer);
                 string mapName = reader.ReadNullTerminatedString(gfxMapAsset.MapNamePointer);
+                string mapEnt = reader.ReadNullTerminatedString(mapEntsAsset.MapData);
 
                 // Verify a BSP is actually loaded (if in base menu, etc, no map is loaded)
                 if (String.IsNullOrWhiteSpace(gfxMapName))
@@ -298,6 +300,33 @@ namespace Husky
                     // Build output Folder
                     string outputName = Path.Combine("exported_maps", "black_ops", gameType, mapName, mapName);
                     Directory.CreateDirectory(Path.GetDirectoryName(outputName));
+
+                    /*string outputOffsets = Path.Combine(Path.GetDirectoryName(outputName), "TestOffsets", "Test_Offset_");
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputOffsets));
+
+                    long test_offset = 0;
+                    while (true)
+                    {
+                        string testgfxMapName = reader.ReadNullTerminatedString(gfxMapAsset.NamePointer);
+                        var testmapEntsAsset = reader.ReadStruct<MapEntsMW2>(reader.ReadInt32(assetPoolsAddress + test_offset * 0x1));
+                        string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
+                        if (!String.IsNullOrWhiteSpace(testmapEnt) && testmapEnt.Length > 50000)
+                        {
+                            string firstLetter = testmapEnt.Substring(0, 1);
+                            if (firstLetter == "{")
+                            {
+                                printCallback?.Invoke(String.Format("PoolAddressOffset MapEnts {0}", test_offset));
+
+                                File.WriteAllText(outputOffsets + String.Format("GAME_OFFSET_{0}.txt", test_offset), testmapEnt);
+                            }
+                        }
+                        test_offset = test_offset + 1;
+
+                        if (test_offset % 100000 == 0)
+                        {
+                            printCallback?.Invoke(String.Format("Searching {0}", test_offset));
+                        }
+                    }*/
 
                     // Stop watch
                     var stopWatch = Stopwatch.StartNew();
@@ -390,16 +419,25 @@ namespace Husky
                     foreach (string imageName in imageNames)
                         searchString += String.Format("{0},", Path.GetFileNameWithoutExtension(imageName));
 
+                    // Get dynamic models from Map Entities
+                    List<IDictionary> MapEntities = CreateMapEntities(mapEnt, printCallback);
+
                     // Create .JSON with XModel Data
-                    List<IDictionary> ModelData = CreateXModelDictionary(reader, gfxMapAsset.GfxStaticModelsPointer, (int)gfxMapAsset.GfxStaticModelsCount);
+                    List<IDictionary> ModelData = CreateXModelDictionary(reader, gfxMapAsset.GfxStaticModelsPointer, (int)gfxMapAsset.GfxStaticModelsCount, MapEntities);
                     string xmodeljson = JToken.FromObject(ModelData).ToString(Formatting.Indented);
                     File.WriteAllText(outputName + "_xmodels.json", xmodeljson);
 
                     // Loop through xmodels, and append each to the search string (for Wraith/Greyhound)
                     List<string> xmodelList = CreateXModelList(ModelData);
 
+                    // Create .JSON with World settings
+                    Dictionary<string, string> world_settings = ParseWorldSettings(mapEnt);
+                    string worldsettingsjson = JToken.FromObject(world_settings).ToString(Formatting.Indented);
+                    File.WriteAllText(outputName + "_worldsettings.json", worldsettingsjson);
+
                     // Dump it
                     File.WriteAllText(outputName + "_search_string.txt", searchString);
+                    File.WriteAllText(outputName + "_mapEnts.txt", mapEnt);
                     File.WriteAllText(outputName + "_xmodelList.txt", String.Join(",", xmodelList.ToArray()));
 
                     // Read entities and dump to map
@@ -549,7 +587,7 @@ namespace Husky
             return entities;
         }
 
-        public unsafe static List<IDictionary> CreateXModelDictionary(ProcessReader reader, long address, int count)
+        public unsafe static List<IDictionary> CreateXModelDictionary(ProcessReader reader, long address, int count, List<IDictionary> MapEntities)
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             // Read buffer
@@ -604,6 +642,12 @@ namespace Husky
                 }
             }
 
+            foreach (IDictionary entity in MapEntities)
+            {
+
+                MapModels.Add(entity);
+            }
+
             // Done
             return MapModels;
         }
@@ -642,5 +686,119 @@ namespace Husky
             // Done
             return xmodel_list;
         }
+
+        public unsafe static List<IDictionary> CreateMapEntities(string mapEnts, Action<object> printCallback = null)
+        {
+            List<string> DynModels = new List<string>();
+            string[] Entities = mapEnts.Split(new[] { "\n}\n{" }, StringSplitOptions.None);
+            foreach (string i in Entities)
+            {
+
+                if (i.Contains("script_model") && i.Contains("\"model\""))
+                {
+                    DynModels.Add(i);
+                }
+            }
+
+            List<IDictionary> ParsedList = new List<IDictionary>();
+            Regex reg = new Regex(@"""(.*?)""\s""(.*?)""");
+
+            // Create list with unnessecary strings in vehicle models
+            List<string> badStrings = new List<string>()
+            {
+                "_static",
+                "_radiant",
+            };
+
+            // Iterate through entities
+            foreach (string entity in DynModels)
+            {
+                // Split lines in each entity
+                string[] entity_properties = entity.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+
+                // Create dictionary for XModel data
+                Dictionary<string, string> model_data = new Dictionary<string, string>();
+
+                // Iterate through lines, and get necessary ones
+                foreach (String line in entity_properties)
+                {
+                    MatchCollection matches = reg.Matches(line);
+                    foreach (Match m in matches)
+                    {
+                        // Check if line is a model name
+                        if (m.Groups[1].Value == "model")
+                        {
+                            // Check if model is a vehicle
+                            if (m.Groups[2].Value.Contains("veh"))
+                            {
+                                string modelname = m.Groups[2].Value;
+
+                                // Iterate through bad model names and fix them
+                                foreach (string b in badStrings)
+                                {
+                                    if (modelname.Contains(b))
+                                    {
+                                        modelname = modelname.Replace(b, "_whole");
+                                        model_data.Add("Name", modelname);
+                                    }
+                                }
+                            }
+
+                            // If model is not a vehicle, just add it.
+                            else
+                            {
+                                model_data.Add("Name", m.Groups[2].Value);
+                            }
+                        }
+
+                        // Check if line is origin (position)
+                        else if (m.Groups[1].Value == "origin")
+                        {
+                            // Split into Vector3
+                            string[] vec3 = m.Groups[2].Value.Split(new[] { " " }, StringSplitOptions.None);
+                            model_data.Add("PosX", vec3[0]);
+                            model_data.Add("PosY", vec3[1]);
+                            model_data.Add("PosZ", vec3[2]);
+                        }
+
+                        // Check if line is angles (rotation)
+                        else if (m.Groups[1].Value == "angles")
+                        {
+                            // Split into Vector3
+                            string[] vec3 = m.Groups[2].Value.Split(new[] { " " }, StringSplitOptions.None);
+                            model_data.Add("RotX", vec3[2]);
+                            model_data.Add("RotY", vec3[0]);
+                            model_data.Add("RotZ", vec3[1]);
+                        }
+                    }
+                }
+
+                // Default model scale to 1
+                model_data.Add("Scale", "1.0000");
+
+                // Add model to list
+                ParsedList.Add(model_data);
+            }
+            return ParsedList;
+        }
+
+        public unsafe static Dictionary<string, string> ParseWorldSettings(string mapEnts)
+        {
+            Regex reg = new Regex(@"""(.*?)""\s""(.*?)""");
+            string world = mapEnts.Split(new[] { "\n}\n{" }, StringSplitOptions.None)[0];
+            string[] world_settings = world.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+
+            Dictionary<string, string> world_data = new Dictionary<string, string>();
+            foreach (String line in world_settings)
+            {
+                MatchCollection matches = reg.Matches(line);
+                foreach (Match m in matches)
+                {
+                    world_data.Add(m.Groups[1].Value, m.Groups[2].Value);
+                }
+            }
+            return world_data;
+        }
+
     }
 }
