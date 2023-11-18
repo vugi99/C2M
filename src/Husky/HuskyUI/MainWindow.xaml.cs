@@ -21,6 +21,7 @@ using System.Threading;
 using System.Windows.Shell;
 using Husky;
 using System.Reflection;
+using System.Globalization;
 
 namespace HuskyUI
 {
@@ -45,6 +46,9 @@ namespace HuskyUI
             // Initial Print
             PrintLine("Load a map, then click the paper plane to export loaded BSP data.\n\nSupported CoD's:\n\n * Modern Warfare\n * Modern Warfare 2\n * Modern Warfare 3\n * Modern Warfare Remastered\n * World at War\n * Black Ops I\n * Black Ops II\n * Black Ops III\n * Ghosts\n * Advanced Warfare\n * Infinite Warfare\n * World War II");
             PrintLine("");
+
+            // Reset culture for OBJs.
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
         }
 
         private void ExportClick(object sender, RoutedEventArgs e)

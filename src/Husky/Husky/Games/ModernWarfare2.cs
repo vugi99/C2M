@@ -679,7 +679,10 @@ namespace Husky
                 MatchCollection matches = reg.Matches(line);
                 foreach (Match m in matches)
                 {
-                    world_data.Add(m.Groups[1].Value, m.Groups[2].Value);
+                    if (world_data.ContainsKey(m.Groups[1].Value) == false)
+                    {
+                        world_data.Add(m.Groups[1].Value, m.Groups[2].Value);
+                    }
                 }
             }
             return world_data;

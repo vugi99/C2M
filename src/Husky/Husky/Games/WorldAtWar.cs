@@ -279,7 +279,7 @@ namespace Husky
                 // Load BSP Pools (they only have a size of 1 so we have no free header)
                 var gfxMapAsset = reader.ReadStruct<GfxMap>(reader.ReadInt32(assetPoolsAddress + 0x11 * 4));
                 var mapEntsAsset = reader.ReadStruct<MapEnts>(reader.ReadInt32(assetPoolsAddress + 0x10 * 4));
-                
+
 
                 // Name
                 string gfxMapName = reader.ReadNullTerminatedString(gfxMapAsset.NamePointer);
@@ -306,6 +306,33 @@ namespace Husky
                     // Build output Folder
                     string outputName = Path.Combine("exported_maps", "world_at_war", gameType, mapName, mapName);
                     Directory.CreateDirectory(Path.GetDirectoryName(outputName));
+
+
+                    /*string outputOffsets = Path.Combine(Path.GetDirectoryName(outputName), "TestOffsets", "Test_Offset_");
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputOffsets));
+
+                    long test_offset = 0;
+                    while (true)
+                    {
+                        var testmapEntsAsset = reader.ReadStruct<MapEnts>(reader.ReadInt32(assetPoolsAddress + test_offset * 0x1));
+                        string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
+                        if (!String.IsNullOrWhiteSpace(testmapEnt) && testmapEnt.Length > 10000)
+                        {
+                            string firstLetter = testmapEnt.Substring(0, 1);
+                            if (firstLetter == "{")
+                            {
+                                printCallback?.Invoke(String.Format("PoolAddressOffset MapEnts {0}", test_offset));
+
+                                File.WriteAllText(outputOffsets + String.Format("GAME_OFFSET_{0}.txt", test_offset), testmapEnt);
+                            }
+                        }
+                        test_offset = test_offset + 1;
+
+                        if (test_offset % 100000 == 0)
+                        {
+                            printCallback?.Invoke(String.Format("Searching {0}", test_offset));
+                        }
+                    }*/
 
                     // Stop watch
                     var stopWatch = Stopwatch.StartNew();
@@ -713,7 +740,10 @@ namespace Husky
                 MatchCollection matches = reg.Matches(line);
                 foreach (Match m in matches)
                 {
-                    world_data.Add(m.Groups[1].Value, m.Groups[2].Value);
+                    if (world_data.ContainsKey(m.Groups[1].Value) == false)
+                    {
+                        world_data.Add(m.Groups[1].Value, m.Groups[2].Value);
+                    }
                 }
             }
             return world_data;
