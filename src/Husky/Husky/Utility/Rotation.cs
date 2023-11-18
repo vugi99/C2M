@@ -97,20 +97,26 @@ namespace Husky
                 // I thought none the calculations were working, NO, the bastards
                 // in the .MAP files store them as YXZ or some crap like that
                 var quaternion = ToQuaternion();
+
                 Vector3 result = new Vector3();
 
                 double t0 = 2.0 * (quaternion.W * quaternion.X + quaternion.Y * quaternion.Z);
                 double t1 = 1.0 - 2.0 * (quaternion.X * quaternion.X + quaternion.Y * quaternion.Y);
+
                 result.X = Math.Atan2(t0, t1);
 
-                double t2 = +2.0 * (quaternion.W * quaternion.Y - quaternion.Z * quaternion.X);
+
+                double t2 = 2.0 * (quaternion.W * quaternion.Y - quaternion.Z * quaternion.X);
+
+                t2 = t2 > 1.0 ? 1.0 : t2;
+                t2 = t2 < -1.0 ? -1.0 : t2;
+                result.Y = Math.Asin(t2);
+
+
                 double t3 = +2.0 * (quaternion.W * quaternion.Z + quaternion.X * quaternion.Y);
                 double t4 = +1.0 - 2.0 * (quaternion.Y * quaternion.Y + quaternion.Z * quaternion.Z);
-                result.Y = Math.Atan2(t2, Math.Sqrt(t3 * t3 + t4 * t4));
 
-                double t5 = 2.0 * (quaternion.W * quaternion.Z - quaternion.X * quaternion.Y);
-                double t6 = 1.0 - 2.0 * (quaternion.Y * quaternion.Y + quaternion.Z * quaternion.Z);
-                result.Z = Math.Atan2(t5, t6);
+                result.Z = Math.Atan2(t3, t4);
 
                 return result;
             }
