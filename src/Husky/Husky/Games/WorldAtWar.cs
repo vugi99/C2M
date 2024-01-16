@@ -277,14 +277,14 @@ namespace Husky
             if (firstXModelName == "void" || firstXModelName == "defaultactor" || firstXModelName == "defaultweapon")
             {
                 // Load BSP Pools (they only have a size of 1 so we have no free header)
-                var gfxMapAsset = reader.ReadStruct<GfxMap>(reader.ReadInt32(assetPoolsAddress + 0x11 * 4));
-                var mapEntsAsset = reader.ReadStruct<MapEnts>(reader.ReadInt32(assetPoolsAddress + 0x10 * 4));
+                var gfxMapAsset = reader.ReadStruct<GfxMap>(reader.ReadInt32(assetPoolsAddress + 0x44));
+                var mapEntsAsset = reader.ReadStruct<MapEntsMW2>(reader.ReadInt32(assetPoolsAddress + 0x40));
 
 
                 // Name
                 string gfxMapName = reader.ReadNullTerminatedString(gfxMapAsset.NamePointer);
-                string mapEnt = reader.ReadNullTerminatedString(mapEntsAsset.MapData);
                 string mapName = reader.ReadNullTerminatedString(gfxMapAsset.MapNamePointer);
+                string mapEnt = reader.ReadNullTerminatedString(mapEntsAsset.MapData);
 
                 // Verify a BSP is actually loaded (if in base menu, etc, no map is loaded)
                 if (String.IsNullOrWhiteSpace(gfxMapName))
@@ -314,9 +314,10 @@ namespace Husky
                     long test_offset = 0;
                     while (true)
                     {
-                        var testmapEntsAsset = reader.ReadStruct<MapEnts>(reader.ReadInt32(assetPoolsAddress + test_offset * 0x1));
+                        string testgfxMapName = reader.ReadNullTerminatedString(gfxMapAsset.NamePointer);
+                        var testmapEntsAsset = reader.ReadStruct<MapEntsMW2>(reader.ReadInt32(assetPoolsAddress + test_offset * 0x1));
                         string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
-                        if (!String.IsNullOrWhiteSpace(testmapEnt) && testmapEnt.Length > 10000)
+                        if (!String.IsNullOrWhiteSpace(testmapEnt) && testmapEnt.Length > 50000)
                         {
                             string firstLetter = testmapEnt.Substring(0, 1);
                             if (firstLetter == "{")
@@ -422,7 +423,7 @@ namespace Husky
                         searchString += String.Format("{0},", Path.GetFileNameWithoutExtension(imageName));
 
                     // Get dynamic models from Map Entities
-                    List<IDictionary> MapEntities = ParseMapEnts(mapEnt);
+                    List<IDictionary> MapEntities = CreateMapEntities(mapEnt, printCallback);
 
                     // Create .JSON with XModel Data
                     List<IDictionary> ModelData = CreateXModelDictionary(reader, gfxMapAsset.GfxStaticModelsPointer, (int)gfxMapAsset.GfxStaticModelsCount, MapEntities);
@@ -437,13 +438,10 @@ namespace Husky
                     string worldsettingsjson = JToken.FromObject(world_settings).ToString(Formatting.Indented);
                     File.WriteAllText(outputName + "_worldsettings.json", worldsettingsjson);
 
-
                     // Dump it
                     File.WriteAllText(outputName + "_search_string.txt", searchString);
                     File.WriteAllText(outputName + "_mapEnts.txt", mapEnt);
                     File.WriteAllText(outputName + "_xmodelList.txt", String.Join(",", xmodelList.ToArray()));
-
-
 
                     // Read entities and dump to map
                     mapFile.Entities.AddRange(ReadStaticModels(reader, gfxMapAsset.GfxStaticModelsPointer, (int)gfxMapAsset.GfxStaticModelsCount));
@@ -531,18 +529,22 @@ namespace Husky
         /// </summary>
         public static WavefrontOBJ.Material ReadMaterial(ProcessReader reader, long address)
         {
-            // Read Material
+             // Read Material
             var material = reader.ReadStruct<Material>(address);
             // Create new OBJ Image
-            var objMaterial = new WavefrontOBJ.Material(Path.GetFileNameWithoutExtension(reader.ReadNullTerminatedString(reader.ReadInt32(address)).Replace("*", "")));
+            var objMaterial = new WavefrontOBJ.Material(Path.GetFileNameWithoutExtension(reader.ReadNullTerminatedString(reader.ReadInt32(address)).Replace("*", "").Replace(")", "").Replace("(", "")));
             // Loop over images
             for (byte i = 0; i < material.ImageCount; i++)
             {
                 // Read Material Image
-                var materialImage = reader.ReadStruct<MaterialImage32B>(material.ImageTablePointer + i * Marshal.SizeOf<MaterialImage32B>());
+                var materialImage = reader.ReadStruct<MaterialImage32A>(material.ImageTablePointer + i * Marshal.SizeOf<MaterialImage32A>());
                 // Check for color map for now
                 if (materialImage.SemanticHash == 0xA0AB1041)
-                    objMaterial.DiffuseMap = reader.ReadNullTerminatedString(reader.ReadInt32(materialImage.ImagePointer + 0x20));
+                    objMaterial.DiffuseMap = reader.ReadNullTerminatedString(reader.ReadInt32(materialImage.ImagePointer + 44));
+                else if (materialImage.SemanticHash == 0x59D30D0F)
+                    objMaterial.NormalMap = reader.ReadNullTerminatedString(reader.ReadInt32(materialImage.ImagePointer + 44));
+                else if (materialImage.SemanticHash == 0x34ECCCB3)
+                    objMaterial.SpecularMap = reader.ReadNullTerminatedString(reader.ReadInt32(materialImage.ImagePointer + 44));
             }
             // Done
             return objMaterial;
@@ -594,7 +596,7 @@ namespace Husky
             return entities;
         }
 
-        public unsafe static List<IDictionary> CreateXModelDictionary(ProcessReader reader, long address, int count, List<IDictionary> MapEntities)
+       public unsafe static List<IDictionary> CreateXModelDictionary(ProcessReader reader, long address, int count, List<IDictionary> MapEntities)
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             // Read buffer
@@ -627,12 +629,16 @@ namespace Husky
                 // Convert to Euler
                 var euler = matrix.ToEuler();
                 // Add it
-                if (string.IsNullOrEmpty(modelName) == true || modelName.Contains("?") == true || modelName.Contains("'") == true || modelName.Contains("\\") == true || modelName.Contains("fx") == true || modelName.Contains("viewmodel") == true || staticModel.ModelScale < 0.001 || staticModel.ModelScale > 10)
+                if (string.IsNullOrEmpty(modelName) == true || modelName.Contains("?") == true || modelName.Contains("'") == true || modelName.Contains("\\") == true || modelName.Contains("fx") == true || modelName.Contains("viewmodel") == true || modelName.Contains("*") == true || staticModel.ModelScale < 0.001 || staticModel.ModelScale > 10)
                 {
 
                 }
                 else
                 {
+                    if (modelName.Contains("mlv"))
+                    {
+                        modelName = modelName.Replace("mlv", "");
+                    }
                     ModelData.Add("Name", CleanInput(modelName));
                     ModelData.Add("PosX", string.Format("{0:0.0000}", staticModel.X));
                     ModelData.Add("PosY", string.Format("{0:0.0000}", staticModel.Y));
@@ -644,15 +650,31 @@ namespace Husky
                     MapModels.Add(new Dictionary<string, string>(ModelData));
                 }
             }
+
             foreach (IDictionary entity in MapEntities)
             {
 
                 MapModels.Add(entity);
             }
 
-
             // Done
             return MapModels;
+        }
+
+        public unsafe static string CleanInput(string strIn)
+        {
+            // Replace invalid characters with empty strings.
+            try
+            {
+                return Regex.Replace(strIn, @"[^\w\.@-]", "",
+                                     RegexOptions.None, TimeSpan.FromSeconds(1.5));
+            }
+            // If we timeout when replacing invalid characters, 
+            // we should return Empty.
+            catch (RegexMatchTimeoutException)
+            {
+                return String.Empty;
+            }
         }
 
         public unsafe static List<string> CreateXModelList(List<IDictionary> ModelData)
@@ -674,18 +696,16 @@ namespace Husky
             return xmodel_list;
         }
 
-        public unsafe static List<IDictionary> ParseMapEnts(string mapEnts)
+        public unsafe static List<IDictionary> CreateMapEntities(string mapEnts, Action<object> printCallback = null)
         {
             List<string> DynModels = new List<string>();
             string[] Entities = mapEnts.Split(new[] { "\n}\n{" }, StringSplitOptions.None);
             foreach (string i in Entities)
             {
+
                 if (i.Contains("script_model") && i.Contains("\"model\""))
                 {
-                    if (i.Contains("\"hq\"") == false && i.Contains("\"sab\"") == false && i.Contains("\"ctf\"") == false && i.Contains("\"sd\"") == false && i.Contains("\"special") == false)
-                    {
-                        DynModels.Add(i);
-                    }
+                    DynModels.Add(i);
                 }
             }
 

@@ -8,7 +8,7 @@ With much respect to Scobalula's intial intentions, and all the modders out ther
 
 The tool lets you extract map data (map geometry, xmodels, materials & textures) from several CoD games, and import them to Maya with the [import scripts](https://github.com/sheilan102/SHEILAN-Maya-Tools) (C4D & UE on the roadmap).
 
-### Supported Games
+### Supported Games..
 
 * Call of Duty: Modern Warfare
 * Call of Duty: Modern Warfare 2
