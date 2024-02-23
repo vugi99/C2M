@@ -278,7 +278,7 @@ namespace Husky
             {
                 // Load BSP Pools (they only have a size of 1 so we have no free header)
                 var gfxMapAsset = reader.ReadStruct<GfxMap>(reader.ReadInt32(assetPoolsAddress + 0x11 * 4));
-                var mapEntsAsset = reader.ReadStruct<MapEnts>(reader.ReadInt32(assetPoolsAddress + 0x10 * 4));
+                var mapEntsAsset = reader.ReadStruct<MapEnts>(reader.ReadInt32(assetPoolsAddress + 0x10 * 4) + 0x4);
 
 
                 // Name
@@ -314,24 +314,29 @@ namespace Husky
                     long test_offset = 0;
                     while (true)
                     {
-                        var testmapEntsAsset = reader.ReadStruct<MapEnts>(reader.ReadInt32(assetPoolsAddress + test_offset * 0x1));
-                        string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
-                        if (!String.IsNullOrWhiteSpace(testmapEnt) && testmapEnt.Length > 10000)
+                        for (long test_offset_2 = -128; test_offset_2 <= 128; test_offset_2++)
                         {
-                            string firstLetter = testmapEnt.Substring(0, 1);
-                            if (firstLetter == "{")
+                            var testmapEntsAsset = reader.ReadStruct<MapEnts>(reader.ReadInt32(assetPoolsAddress + test_offset * 0x1) + test_offset_2 * 0x1);
+                            string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
+                            if (!String.IsNullOrWhiteSpace(testmapEnt) && testmapEnt.Length > 10000)
                             {
-                                printCallback?.Invoke(String.Format("PoolAddressOffset MapEnts {0}", test_offset));
+                                string firstLetter = testmapEnt.Substring(0, 1);
+                                if (firstLetter == "{")
+                                {
+                                    printCallback?.Invoke(String.Format("PoolAddressOffset MapEnts {0} {1}", test_offset, test_offset_2));
 
-                                File.WriteAllText(outputOffsets + String.Format("GAME_OFFSET_{0}.txt", test_offset), testmapEnt);
+                                    File.WriteAllText(outputOffsets + String.Format("GAME_OFFSET_{0}_{1}.txt", test_offset, test_offset_2), testmapEnt);
+                                }
                             }
+                            
                         }
-                        test_offset = test_offset + 1;
 
                         if (test_offset % 100000 == 0)
                         {
                             printCallback?.Invoke(String.Format("Searching {0}", test_offset));
                         }
+
+                        test_offset = test_offset + 1;
                     }*/
 
                     // Stop watch

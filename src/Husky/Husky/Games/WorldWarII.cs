@@ -404,6 +404,38 @@ namespace Husky
                     string outputName = Path.Combine("exported_maps", "world_war_2", gameType, mapName, mapName);
                     Directory.CreateDirectory(Path.GetDirectoryName(outputName));
 
+
+                    /*string outputOffsets = Path.Combine(Path.GetDirectoryName(outputName), "TestOffsets", "Test_Offset_");
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputOffsets));
+
+                    long test_offset = 0;
+                    while (true)
+                    {
+                        for (long test_offset_2 = -128; test_offset_2 <= 128; test_offset_2++)
+                        {
+                            var testmapEntsAsset = reader.ReadStruct<MapEnts64>(reader.ReadInt64(reader.GetBaseAddress() + assetPoolsAddress + test_offset * 0x1) + test_offset_2 * 0x1);
+                            string testmapEnt = reader.ReadNullTerminatedString(testmapEntsAsset.MapData);
+                            if (!String.IsNullOrWhiteSpace(testmapEnt) && testmapEnt.Length > 10000)
+                            {
+                                string firstLetter = testmapEnt.Substring(0, 1);
+                                if (firstLetter == "{")
+                                {
+                                    printCallback?.Invoke(String.Format("PoolAddressOffset MapEnts {0} {1}", test_offset, test_offset_2));
+
+                                    File.WriteAllText(outputOffsets + String.Format("GAME_OFFSET_{0}_{1}.txt", test_offset, test_offset_2), testmapEnt);
+                                }
+                            }
+                            
+                        }
+                        
+                        if (test_offset % 100000 == 0)
+                        {
+                            printCallback?.Invoke(String.Format("Searching {0}", test_offset));
+                        }
+
+                        test_offset = test_offset + 1;
+                    }*/
+
                     // Stop watch
                     var stopWatch = Stopwatch.StartNew();
 
